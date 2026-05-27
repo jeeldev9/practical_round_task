@@ -8,8 +8,39 @@ import '../../../../generated/assets.dart';
 import '../controllers/auth_controller.dart';
 import '../widgets/auth_text_field.dart';
 
-class LoginScreen extends GetView<AuthController> {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final AuthController controller = Get.find<AuthController>();
+
+  late final TextEditingController _emailController;
+  late final TextEditingController _passwordController;
+
+  late final FocusNode _emailFocus;
+  late final FocusNode _passwordFocus;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController();
+    _passwordController = TextEditingController();
+    _emailFocus = FocusNode();
+    _passwordFocus = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,26 +93,29 @@ class LoginScreen extends GetView<AuthController> {
 
               // Email TextField
               AuthTextField(
-                controller: controller.emailController,
+                controller: _emailController,
                 label: 'Email address',
                 prefixIcon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
-                focusNode: controller.emailFocus,
-                nextFocusNode: controller.passwordFocus,
+                focusNode: _emailFocus,
+                nextFocusNode: _passwordFocus,
               ),
 
               const SizedBox(height: 16),
 
               // Password TextField wrapped in Obx for suffix toggle + obscureText
               Obx(() => AuthTextField(
-                    controller: controller.passwordController,
+                    controller: _passwordController,
                     label: 'Password',
                     prefixIcon: Icons.lock_outline,
                     obscureText: !controller.isPasswordVisible.value,
                     textInputAction: TextInputAction.done,
-                    focusNode: controller.passwordFocus,
-                    onSubmitted: () => controller.login(),
+                    focusNode: _passwordFocus,
+                    onSubmitted: () => controller.login(
+                      _emailController.text.trim(),
+                      _passwordController.text.trim(),
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         controller.isPasswordVisible.value
@@ -156,7 +190,10 @@ class LoginScreen extends GetView<AuthController> {
               Obx(() => AppButton(
                     text: 'Sign In',
                     isLoading: controller.isLoading.value,
-                    onPressed: () => controller.login(),
+                    onPressed: () => controller.login(
+                      _emailController.text.trim(),
+                      _passwordController.text.trim(),
+                    ),
                   )),
 
               const SizedBox(height: 24),

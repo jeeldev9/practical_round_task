@@ -6,8 +6,53 @@ import '../../../../core/widgets/app_button.dart';
 import '../controllers/auth_controller.dart';
 import '../widgets/auth_text_field.dart';
 
-class RegisterScreen extends GetView<AuthController> {
+class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
+
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  final AuthController controller = Get.find<AuthController>();
+
+  late final TextEditingController _nameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _passwordController;
+  late final TextEditingController _confirmPasswordController;
+
+  late final FocusNode _nameFocus;
+  late final FocusNode _emailFocus;
+  late final FocusNode _passwordFocus;
+  late final FocusNode _confirmPasswordFocus;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController();
+    _emailController = TextEditingController();
+    _passwordController = TextEditingController();
+    _confirmPasswordController = TextEditingController();
+
+    _nameFocus = FocusNode();
+    _emailFocus = FocusNode();
+    _passwordFocus = FocusNode();
+    _confirmPasswordFocus = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+
+    _nameFocus.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    _confirmPasswordFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,38 +100,38 @@ class RegisterScreen extends GetView<AuthController> {
 
               // Full Name TextField
               AuthTextField(
-                controller: controller.nameController,
+                controller: _nameController,
                 label: 'Full Name',
                 prefixIcon: Icons.person_outline,
                 textInputAction: TextInputAction.next,
-                focusNode: controller.nameFocus,
-                nextFocusNode: controller.emailFocus,
+                focusNode: _nameFocus,
+                nextFocusNode: _emailFocus,
               ),
 
               const SizedBox(height: 16),
 
               // Email TextField
               AuthTextField(
-                controller: controller.emailController,
+                controller: _emailController,
                 label: 'Email address',
                 prefixIcon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
-                focusNode: controller.emailFocus,
-                nextFocusNode: controller.passwordFocus,
+                focusNode: _emailFocus,
+                nextFocusNode: _passwordFocus,
               ),
 
               const SizedBox(height: 16),
 
               // Password TextField with Eye Toggle
               Obx(() => AuthTextField(
-                    controller: controller.passwordController,
+                    controller: _passwordController,
                     label: 'Password',
                     prefixIcon: Icons.lock_outline,
                     obscureText: !controller.isPasswordVisible.value,
                     textInputAction: TextInputAction.next,
-                    focusNode: controller.passwordFocus,
-                    nextFocusNode: controller.confirmPasswordFocus,
+                    focusNode: _passwordFocus,
+                    nextFocusNode: _confirmPasswordFocus,
                     suffixIcon: IconButton(
                       icon: Icon(
                         controller.isPasswordVisible.value
@@ -101,13 +146,18 @@ class RegisterScreen extends GetView<AuthController> {
 
               // Confirm Password TextField with Eye Toggle
               Obx(() => AuthTextField(
-                    controller: controller.confirmPasswordController,
+                    controller: _confirmPasswordController,
                     label: 'Confirm Password',
                     prefixIcon: Icons.lock_outline,
                     obscureText: !controller.isConfirmPasswordVisible.value,
                     textInputAction: TextInputAction.done,
-                    focusNode: controller.confirmPasswordFocus,
-                    onSubmitted: () => controller.register(),
+                    focusNode: _confirmPasswordFocus,
+                    onSubmitted: () => controller.register(
+                      name: _nameController.text.trim(),
+                      email: _emailController.text.trim(),
+                      password: _passwordController.text.trim(),
+                      confirmPassword: _confirmPasswordController.text.trim(),
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         controller.isConfirmPasswordVisible.value
@@ -163,7 +213,12 @@ class RegisterScreen extends GetView<AuthController> {
               Obx(() => AppButton(
                     text: 'Sign Up',
                     isLoading: controller.isLoading.value,
-                    onPressed: () => controller.register(),
+                    onPressed: () => controller.register(
+                      name: _nameController.text.trim(),
+                      email: _emailController.text.trim(),
+                      password: _passwordController.text.trim(),
+                      confirmPassword: _confirmPasswordController.text.trim(),
+                    ),
                   )),
 
               const SizedBox(height: 24),

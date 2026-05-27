@@ -16,11 +16,18 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final AuthController controller = Get.find<AuthController>();
 
-  // Own local FocusNode — NOT shared with login screen
+  late final TextEditingController _emailController;
   final FocusNode _emailFocus = FocusNode();
 
   @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController();
+  }
+
+  @override
   void dispose() {
+    _emailController.dispose();
     _emailFocus.dispose();
     super.dispose();
   }
@@ -69,15 +76,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
               const SizedBox(height: 32),
 
-              // Email TextField — uses LOCAL focus node
+              // Email TextField — uses LOCAL focus node and controller
               AuthTextField(
-                controller: controller.emailController,
+                controller: _emailController,
                 label: 'Email address',
                 prefixIcon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.done,
                 focusNode: _emailFocus,
-                onSubmitted: () => controller.forgotPassword(),
+                onSubmitted: () => controller.forgotPassword(_emailController.text.trim()),
               ),
 
               const SizedBox(height: 24),
@@ -125,7 +132,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               Obx(() => AppButton(
                     text: 'Send Reset Link',
                     isLoading: controller.isLoading.value,
-                    onPressed: () => controller.forgotPassword(),
+                    onPressed: () => controller.forgotPassword(_emailController.text.trim()),
                   )),
 
               const SizedBox(height: 24),

@@ -28,18 +28,6 @@ class AuthController extends GetxController {
   final RxString errorMessage = ''.obs;
   final Rx<UserEntity?> currentUser = Rx<UserEntity?>(null);
 
-  // TextEditingControllers
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final nameController = TextEditingController();
-  final confirmPasswordController = TextEditingController();
-
-  // FocusNodes
-  final emailFocus = FocusNode();
-  final passwordFocus = FocusNode();
-  final nameFocus = FocusNode();
-  final confirmPasswordFocus = FocusNode();
-
   @override
   void onInit() {
     super.onInit();
@@ -81,15 +69,12 @@ class AuthController extends GetxController {
   }
 
   // Login handler
-  Future<void> login() async {
+  Future<void> login(String email, String password) async {
     isLoading.value = true;
     clearError();
 
     try {
-      final user = await loginUseCase(
-        emailController.text,
-        passwordController.text,
-      );
+      final user = await loginUseCase(email, password);
       currentUser.value = user;
       clearFields();
     } catch (e) {
@@ -100,16 +85,21 @@ class AuthController extends GetxController {
   }
 
   // Register handler
-  Future<void> register() async {
+  Future<void> register({
+    required String name,
+    required String email,
+    required String password,
+    required String confirmPassword,
+  }) async {
     isLoading.value = true;
     clearError();
 
     try {
       final user = await registerUseCase(
-        nameController.text,
-        emailController.text,
-        passwordController.text,
-        confirmPasswordController.text,
+        name,
+        email,
+        password,
+        confirmPassword,
       );
       currentUser.value = user;
       clearFields();
@@ -121,12 +111,12 @@ class AuthController extends GetxController {
   }
 
   // Forgot password handler
-  Future<void> forgotPassword() async {
+  Future<void> forgotPassword(String email) async {
     isLoading.value = true;
     clearError();
 
     try {
-      await forgotPasswordUseCase(emailController.text);
+      await forgotPasswordUseCase(email);
       FocusManager.instance.primaryFocus?.unfocus();
       Get.snackbar(
         'Success',
@@ -174,10 +164,6 @@ class AuthController extends GetxController {
   }
 
   void clearFields() {
-    emailController.clear();
-    passwordController.clear();
-    nameController.clear();
-    confirmPasswordController.clear();
     isPasswordVisible.value = false;
     isConfirmPasswordVisible.value = false;
     errorMessage.value = '';
@@ -185,16 +171,6 @@ class AuthController extends GetxController {
 
   @override
   void onClose() {
-    emailController.dispose();
-    passwordController.dispose();
-    nameController.dispose();
-    confirmPasswordController.dispose();
-
-    emailFocus.dispose();
-    passwordFocus.dispose();
-    nameFocus.dispose();
-    confirmPasswordFocus.dispose();
-
     super.onClose();
   }
 }
