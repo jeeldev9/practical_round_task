@@ -17,25 +17,20 @@ class TaskListScreen extends StatefulWidget {
 
 class _TaskListScreenState extends State<TaskListScreen> {
   late final TaskController controller;
-
-  /// Scroll controller to detect when the user reaches the bottom of the list.
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     controller = Get.find<TaskController>();
-    // Load the first page once when the screen initialises
     controller.loadTasks();
-
-    // Trigger loadMoreTasks() when the user scrolls within 200px of the bottom
     _scrollController.addListener(_onScroll);
   }
 
   void _onScroll() {
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.position.pixels;
-    const threshold = 200.0; // pixels from bottom to pre-fetch next page
+    const threshold = 200.0;
 
     if (currentScroll >= maxScroll - threshold) {
       controller.loadMoreTasks();
@@ -81,7 +76,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
             const SizedBox(height: 12),
 
-            // 2. Task List with pull-to-refresh + infinite scroll
+            // 2. Task List with pull-to-refresh
             Expanded(
               child: Obx(() {
                 if (controller.isLoading.value) {
@@ -99,13 +94,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   child: ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    // +1 for the bottom loader / "no more" indicator
                     itemCount: list.length + 1,
                     physics: const BouncingScrollPhysics(
                       parent: AlwaysScrollableScrollPhysics(),
                     ),
                     itemBuilder: (context, index) {
-                      // Last slot = pagination indicator
                       if (index == list.length) {
                         return _buildPaginationFooter(context);
                       }
@@ -121,7 +114,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
     );
   }
 
-  /// Shows a spinner while fetching the next page, or a subtle "end" message.
   Widget _buildPaginationFooter(BuildContext context) {
     return Obx(() {
       if (controller.isFetchingMore.value) {
@@ -142,7 +134,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
       if (!controller.hasMore.value && controller.tasks.isNotEmpty) {
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
+          padding: const EdgeInsets.only(top: 20, bottom: 88.0),
           child: Center(
             child: Text(
               '✓  All tasks loaded',
@@ -157,7 +149,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         );
       }
 
-      return const SizedBox(height: 80); // FAB clearance
+      return const SizedBox(height: 88); // FAB clearance
     });
   }
 

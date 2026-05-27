@@ -23,10 +23,10 @@ class PerformanceStats extends GetView<TaskController> {
         ),
         const SizedBox(height: 12),
         Obx(() {
-          // Calculate dynamically from the active list
-          final pendingCount = controller.tasks.where((t) => t.status == 0).length;
-          final completedCount = controller.tasks.where((t) => t.status == 1).length;
-          final highPriorityCount = controller.tasks.where((t) => t.priority == 3 && t.status == 0).length;
+          // Read pre-calculated counts directly from the controller
+          final pendingCount = controller.pendingCount.value;
+          final completedCount = controller.completedCount.value;
+          final highPriorityCount = controller.highPriorityCount.value;
 
           return Row(
             children: [

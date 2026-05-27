@@ -98,7 +98,10 @@ class LoginScreen extends GetView<AuthController> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () => Get.toNamed(AppRoutes.forgotPassword),
+                  onPressed: () {
+                    FocusManager.instance.primaryFocus?.unfocus();
+                    Get.toNamed(AppRoutes.forgotPassword);
+                  },
                   child: const Text(
                     'Forgot Password?',
                     style: TextStyle(
@@ -170,7 +173,10 @@ class LoginScreen extends GetView<AuthController> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () => Get.toNamed(AppRoutes.register),
+                      onPressed: () {
+                        FocusManager.instance.primaryFocus?.unfocus();
+                        Get.toNamed(AppRoutes.register);
+                      },
                       child: const Text(
                         'Register',
                         style: TextStyle(

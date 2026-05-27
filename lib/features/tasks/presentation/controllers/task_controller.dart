@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:sqflite/sqflite.dart' show Sqflite;
 
+import '../../../../core/database/database_helper.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../notifications/data/notification_service.dart';
 import '../../domain/create_task_usecase.dart';
@@ -31,6 +33,11 @@ class TaskController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
 
+  // ── Dashboard Count State ──────────────────────────────────────────────────
+  final RxInt pendingCount = 0.obs;
+  final RxInt completedCount = 0.obs;
+  final RxInt highPriorityCount = 0.obs;
+
   // ── Pagination State ─────────────────────────────────────────────────────────
   static const int _pageSize = 15;
   final RxBool isFetchingMore = false.obs;  // bottom spinner while loading next page
@@ -52,18 +59,48 @@ class TaskController extends GetxController {
   final RxInt selectedPriority = 1.obs; // 1 = Low, 2 = Medium, 3 = High
   final Rx<DateTime?> selectedDueDate = Rx<DateTime?>(null);
 
-  // FocusNodes
-  final titleFocus = FocusNode();
-  final descriptionFocus = FocusNode();
-
   @override
   void onInit() {
     super.onInit();
+    loadDashboardStats();
     loadTasks();
   }
 
-  // Load ALL tasks — used by dashboard stats and initial data.
-  // Pagination (loadMoreTasks) is only for task list screen's infinite scroll.
+  // Load dashboard task statistics directly from the SQLite database
+  Future<void> loadDashboardStats() async {
+    final authController = Get.find<AuthController>();
+    final String? userId = authController.currentUser.value?.uid;
+    if (userId == null) return;
+
+    try {
+      final db = await Get.find<DatabaseHelper>().database;
+
+      // 1. Pending tasks count
+      final pendingResult = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM tasks WHERE user_id = ? AND status = 0',
+        [userId],
+      );
+      pendingCount.value = Sqflite.firstIntValue(pendingResult) ?? 0;
+
+      // 2. Completed tasks count
+      final completedResult = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM tasks WHERE user_id = ? AND status = 1',
+        [userId],
+      );
+      completedCount.value = Sqflite.firstIntValue(completedResult) ?? 0;
+
+      // 3. High priority pending tasks count (priority = 3 and status = 0)
+      final highPriorityResult = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM tasks WHERE user_id = ? AND status = 0 AND priority = 3',
+        [userId],
+      );
+      highPriorityCount.value = Sqflite.firstIntValue(highPriorityResult) ?? 0;
+    } catch (e) {
+      debugPrint('[TaskController] Error loading dashboard stats: $e');
+    }
+  }
+
+  // Load page 1 of tasks — used on initial task screen load
   Future<void> loadTasks() async {
     final authController = Get.find<AuthController>();
     final String? userId = authController.currentUser.value?.uid;
@@ -73,13 +110,30 @@ class TaskController extends GetxController {
     errorMessage.value = '';
 
     try {
-      final loaded = await getTasksUseCase(userId);
-      tasks.assignAll(loaded);
+      // 1. Force database sync from cloud using index-free getTasksUseCase
+      // This will pull all latest Firestore tasks and upsert them into SQLite
+      await getTasksUseCase(userId);
 
-      // Reset pagination cursors so task list screen starts fresh
-      _currentOffset = loaded.length;
-      _lastFirestoreId = loaded.isNotEmpty ? loaded.last.firestoreId : null;
-      hasMore.value = loaded.length >= _pageSize;
+      // Clear current list so we start fresh
+      tasks.clear();
+
+      // 2. Fetch the first page purely from the populated local SQLite cache
+      final page1 = await getTasksPaginatedUseCase(
+        userId,
+        offset: 0,
+        lastFirestoreId: null,
+        pageSize: _pageSize,
+      );
+      
+      tasks.assignAll(page1);
+
+      // Initialize pagination cursors
+      _currentOffset = page1.length;
+      _lastFirestoreId = page1.isNotEmpty ? page1.last.firestoreId : null;
+      hasMore.value = page1.length >= _pageSize;
+
+      // Make sure dashboard counts are refreshed
+      await loadDashboardStats();
     } catch (e) {
       errorMessage.value = e.toString();
     } finally {
@@ -87,9 +141,8 @@ class TaskController extends GetxController {
     }
   }
 
-  /// Append next page — called when user scrolls to the bottom of the list.
+  // Append next page of tasks during infinite scroll
   Future<void> loadMoreTasks() async {
-    // Guard: don't trigger if already fetching or no more pages
     if (isFetchingMore.value || !hasMore.value) return;
 
     final authController = Get.find<AuthController>();
@@ -111,12 +164,17 @@ class TaskController extends GetxController {
       }
 
       if (nextPage.isNotEmpty) {
-        tasks.addAll(nextPage);
-        _currentOffset += nextPage.length;
-        _lastFirestoreId = nextPage.last.firestoreId;
+        // Prevent duplicate appending by checking already loaded IDs
+        final existingIds = tasks.map((t) => t.id).toSet();
+        final uniqueNextPage = nextPage.where((t) => !existingIds.contains(t.id)).toList();
+
+        if (uniqueNextPage.isNotEmpty) {
+          tasks.addAll(uniqueNextPage);
+          _currentOffset += uniqueNextPage.length;
+          _lastFirestoreId = uniqueNextPage.last.firestoreId;
+        }
       }
     } catch (e) {
-      // Non-critical: silently fail, user can scroll again to retry
       debugPrint('[TaskController] loadMoreTasks error: $e');
     } finally {
       isFetchingMore.value = false;
@@ -273,6 +331,8 @@ class TaskController extends GetxController {
         task.firestoreId,
       );
 
+      await loadDashboardStats();
+
       Get.snackbar(
         'Success',
         'Task deleted successfully',
@@ -310,6 +370,7 @@ class TaskController extends GetxController {
         updatedAt: DateTime.now().toIso8601String(),
       );
       await updateUseCase(updatedTask);
+      await loadDashboardStats();
     } catch (_) {
       // Re-load list if sync failed unexpectedly
       await loadTasks();
@@ -365,9 +426,6 @@ class TaskController extends GetxController {
     titleController.dispose();
     descriptionController.dispose();
     dueDateController.dispose();
-
-    titleFocus.dispose();
-    descriptionFocus.dispose();
 
     super.onClose();
   }

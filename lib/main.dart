@@ -60,6 +60,8 @@ void main() async {
   // 7. Read saved theme preference BEFORE runApp so the correct theme
   //    is applied from the very first frame — no flash/jump.
   final prefs = await SharedPreferences.getInstance();
+  Get.put<SharedPreferences>(prefs, permanent: true);
+  
   final savedTheme = prefs.getString('theme_preference') ?? 'System';
   final ThemeMode initialThemeMode = switch (savedTheme) {
     'Light' => ThemeMode.light,

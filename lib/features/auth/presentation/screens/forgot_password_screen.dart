@@ -37,7 +37,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             Icons.arrow_back,
             color: Theme.of(context).colorScheme.onSurface,
           ),
-          onPressed: () => Get.back(),
+          onPressed: () {
+            FocusManager.instance.primaryFocus?.unfocus();
+            Get.back();
+          },
         ),
       ),
       body: SafeArea(
@@ -130,7 +133,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               // Back to Login TextButton
               Center(
                 child: TextButton(
-                  onPressed: () => Get.back(),
+                  onPressed: () {
+                    FocusManager.instance.primaryFocus?.unfocus();
+                    Get.back();
+                  },
                   child: const Text(
                     'Back to Login',
                     style: TextStyle(

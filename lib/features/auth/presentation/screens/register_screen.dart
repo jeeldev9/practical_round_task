@@ -21,7 +21,10 @@ class RegisterScreen extends GetView<AuthController> {
             Icons.arrow_back,
             color: Theme.of(context).colorScheme.onSurface,
           ),
-          onPressed: () => Get.back(),
+          onPressed: () {
+            FocusManager.instance.primaryFocus?.unfocus();
+            Get.back();
+          },
         ),
       ),
       body: SafeArea(
@@ -177,7 +180,10 @@ class RegisterScreen extends GetView<AuthController> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () => Get.back(),
+                      onPressed: () {
+                        FocusManager.instance.primaryFocus?.unfocus();
+                        Get.back();
+                      },
                       child: const Text(
                         'Sign In',
                         style: TextStyle(

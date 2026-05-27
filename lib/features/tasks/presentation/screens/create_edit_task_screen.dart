@@ -9,8 +9,31 @@ import '../controllers/task_controller.dart';
 import '../../domain/task_entity.dart';
 import '../widgets/task_priority_selector.dart';
 
-class CreateEditTaskScreen extends GetView<TaskController> {
+class CreateEditTaskScreen extends StatefulWidget {
   const CreateEditTaskScreen({super.key});
+
+  @override
+  State<CreateEditTaskScreen> createState() => _CreateEditTaskScreenState();
+}
+
+class _CreateEditTaskScreenState extends State<CreateEditTaskScreen> {
+  final TaskController controller = Get.find<TaskController>();
+  late final FocusNode _titleFocus;
+  late final FocusNode _descriptionFocus;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleFocus = FocusNode();
+    _descriptionFocus = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _titleFocus.dispose();
+    _descriptionFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,8 +82,8 @@ class CreateEditTaskScreen extends GetView<TaskController> {
                 label: 'Task Title',
                 prefixIcon: Icons.title,
                 textInputAction: TextInputAction.next,
-                focusNode: controller.titleFocus,
-                nextFocusNode: controller.descriptionFocus,
+                focusNode: _titleFocus,
+                nextFocusNode: _descriptionFocus,
               ),
 
               const SizedBox(height: 16),
@@ -68,7 +91,7 @@ class CreateEditTaskScreen extends GetView<TaskController> {
               // 2. Task Description Input (multiline)
               TextField(
                 controller: controller.descriptionController,
-                focusNode: controller.descriptionFocus,
+                focusNode: _descriptionFocus,
                 maxLines: 4,
                 decoration: InputDecoration(
                   labelText: 'Task Description',

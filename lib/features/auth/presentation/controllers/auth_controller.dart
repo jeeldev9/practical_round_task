@@ -92,7 +92,6 @@ class AuthController extends GetxController {
       );
       currentUser.value = user;
       clearFields();
-      Get.offAllNamed(AppRoutes.dashboard);
     } catch (e) {
       errorMessage.value = e.toString();
     } finally {
@@ -114,7 +113,6 @@ class AuthController extends GetxController {
       );
       currentUser.value = user;
       clearFields();
-      Get.offAllNamed(AppRoutes.dashboard);
     } catch (e) {
       errorMessage.value = e.toString();
     } finally {
@@ -129,6 +127,7 @@ class AuthController extends GetxController {
 
     try {
       await forgotPasswordUseCase(emailController.text);
+      FocusManager.instance.primaryFocus?.unfocus();
       Get.snackbar(
         'Success',
         'Password reset email sent',
@@ -150,7 +149,6 @@ class AuthController extends GetxController {
       await authRepository.logout();
       currentUser.value = null;
       clearFields();
-      Get.offAllNamed(AppRoutes.login);
     } catch (e) {
       Get.snackbar(
         'Error',

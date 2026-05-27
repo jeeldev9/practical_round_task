@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsController extends GetxController {
-  late SharedPreferences _prefs;
+  late final SharedPreferences _prefs;
 
   final RxString currentTheme = 'System'.obs;
   final RxBool isNotificationsEnabled = true.obs;
@@ -11,23 +11,12 @@ class SettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadSettings();
-  }
-
-  // Loads settings from SharedPreferences
-  Future<void> _loadSettings() async {
     try {
-      _prefs = await SharedPreferences.getInstance();
-
-      // Load notifications enabled state (defaults to true)
+      _prefs = Get.find<SharedPreferences>();
       isNotificationsEnabled.value = _prefs.getBool('notifications_enabled') ?? true;
-
-      // Load theme preferences (defaults to System)
-      final String savedTheme = _prefs.getString('theme_preference') ?? 'System';
-      currentTheme.value = savedTheme;
-      _applyTheme(savedTheme);
+      currentTheme.value = _prefs.getString('theme_preference') ?? 'System';
     } catch (_) {
-      // Graceful fallback for failures in early initialized environments
+      // Fallback if not registered
     }
   }
 
